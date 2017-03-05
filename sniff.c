@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <pcap.h>
 
-#define NUM_OF_PACKETS 5
+#define NUM_OF_PACKETS 6
 
 
 //returns device name
@@ -50,9 +50,11 @@ void show_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *p
  void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet){
 
 	u_char macDes[6], macSour[6], eType[2],ipHLength, udp[8], *dns;
-	u_char tID;
-	int i,sPort, dPort,dnsLen, udpLen;
+	int i,sPort, dPort,dnsLen, udpLen, udpBeg,udpEnd;
 
+	udpBeg = 3000;
+	udpEnd = 3000;
+		printf("headerLenght: %d\n", (*header).caplen);
 	for(i = 0; i < (*header).caplen; i++){
 		
 		if(i == 0){
@@ -100,19 +102,22 @@ void show_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 			ipHLength = (packet[i] & 0b1111) * 4;
 			//skip IP header
 			i = i + ipHLength;
-			
+			udpBeg = i;
+			udpEnd = i + 8;
 			printf("\nIP header length: %d, %d\n",ipHLength, i);
 			
 			
 		}
 
-		if((i >= 34) && (i < 42)){
+		//udpbeg because ip can be bigger then 20 byts
+		// + 8 because udp is 8 byts
+		if((i >= (udpBeg)) && (i < udpEnd)){
 
-			udp[i-34]  = packet[i];
+			udp[i-udpBeg]  = packet[i];
 
 		}
 
-		if( i == 42){
+		if( i == (udpEnd)){
 
 			sPort = (udp[0] << 8) | udp[1];
 			dPort = (udp[2] << 8) | udp[3];
@@ -129,25 +134,58 @@ void show_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 
 		// udp stopt here 
 		// 53 is DNS ADD CHECK FOR DNS
-		if((i >= 42) && ((sPort == 53) || (dPort == 53))){
+		if((i >= udpEnd) && ((sPort == 53) || (dPort == 53))){
 			
-			dns[i - 42] = packet[i];
+			dns[i - udpEnd] = packet[i];
 		}
 
-		if((i >= 42) && (i < 44)){
-
-			tID = 
-		}
-
-		if( i == 45){
+		if( i == (*header).caplen - 1){
 
 			printf("dns first part: %.2x\n", dns[0]);
 		}
 
+		
+
 	}
 	
+	unsigned int tID,flags, QR;
+
+	if((sPort == 53) || (dPort == 53)){
+
+		printf("DNS PARSE\n");
+		for(i = 0; i < dnsLen; i++){
+	
+			if(i == 0){
+
+				tID = (dns[0] << 8) | dns[1];
+				printf("Transaction ID: 0x%.4x\n",tID);
+
+				flags = tID = (dns[2] << 8) | dns[3];
+				printf("Flags: 0x%.4x\n", flags);
+
+				QR = (flags & 0x80) >> 7 ;
+
+				if(QR == 1){
+				
+					printf("QR: 0x%.4x = Reponse",QR);
+
+				}else{
+				
+					printf("QR: 0x%.4x = Query",QR);
+				}
+
+				
+			}			
+
+		}
+
+		
+	
+	}
+
 	
 	free(dns);
+	printf("\n\n");
 
 
 }
