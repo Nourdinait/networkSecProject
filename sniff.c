@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pcap.h>
+#include <ctype.h>
 
 #define NUM_OF_PACKETS 6
 
@@ -49,8 +50,9 @@ void show_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 
  void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet){
 
-	u_char macDes[6], macSour[6], eType[2],ipHLength, udp[8], *dns;
-	int i,sPort, dPort,dnsLen, udpLen, udpBeg,udpEnd;
+	u_char macDes[6], macSour[6], eType[2],ipHLength, udp[8], *dns,dName[255];
+	int i, j,sPort, dPort,dnsLen, udpLen, udpBeg,udpEnd;
+	unsigned int tID,flags, QR, opCode, AA, TC, RD, RA,SA,RCode,numQ,numAns,numAuth,numAdd,qType, qClass, TTL, rdLength;
 
 	udpBeg = 3000;
 	udpEnd = 3000;
@@ -132,8 +134,7 @@ void show_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 
 		}		
 
-		// udp stopt here 
-		// 53 is DNS ADD CHECK FOR DNS
+		// 53 is DNS
 		if((i >= udpEnd) && ((sPort == 53) || (dPort == 53))){
 			
 			dns[i - udpEnd] = packet[i];
@@ -148,137 +149,240 @@ void show_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 
 	}
 	
-	unsigned int tID,flags, QR, opCode, AA, TC, RD, RA,SA,RCode;
-
+	
+	//Only parse if it is DNS
 	if((sPort == 53) || (dPort == 53)){
 
-		printf("DNS PARSE\n");
-		for(i = 0; i < dnsLen; i++){
-	
-			if(i == 0){
+		
+		tID = (dns[0] << 8) | dns[1];
+		printf("Transaction ID: 0x%.4x\n",tID);
 
-				tID = (dns[0] << 8) | dns[1];
-				printf("Transaction ID: 0x%.4x\n",tID);
+		flags = tID = (dns[2] << 8) | dns[3];
+		printf("Flags: 0x%.4x\n", flags);
 
-				flags = tID = (dns[2] << 8) | dns[3];
-				printf("Flags: 0x%.4x\n", flags);
+		QR = (flags & 0x8000) >> 15 ;
 
-				QR = (flags & 0x8000) >> 15 ;
+		if(QR == 1){
+		
+			printf("QR: %d = Reponse\n",QR);
 
-				if(QR == 1){
-				
-					printf("QR: %d = Reponse\n",QR);
-
-				}else if( QR == 0){
-				
-					printf("QR: %d = Query\n",QR);
-				}else{
-					printf("QR: %d = UNKNOWN\n",QR);
-
-				}
-
-				opCode = (flags & 0x7800) >> 11 ;
-
-				if(opCode == 0){
-			
-					printf("Opcode: %d = Standard Query\n",opCode);
-				}else if(opCode == 4){
-					printf("Opcode: %d = Inverse\n",opCode);
-				}else{
-					printf("Opcode: %d = UNKNOWN\n",opCode);
-				}
-
-				
-				AA = (flags & 0x0400) >> 10;
-
-				if(AA == 0){
-
-					printf("AA: %d = Non-authorative DNS answer\n",AA);
-				}else if(AA == 1){
-
-					printf("AA: %d = Authorative DNS answer\n",AA);
-				}else{
-
-					printf("AA: %d = UNKNOWN\n",AA);
-				}
-				
-				TC = (flags & 0x0200) >> 9;
-
-				if(TC == 0){
-
-					printf("TC: %d = Message not truncated\n",TC);
-				}else if(TC == 1){
-
-					printf("TC: %d = Message truncated\n",TC);
-				}else{
-
-					printf("TC: %d = UNKNOWN\n",TC);
-				}
-
-				RD = (flags & 0x0100) >> 8;
-
-				if(RD == 0){
-
-					printf("RD: %d = Non-recursive query\n",RD);
-				}else if(RD == 1){
-
-					printf("RD: %d = Recursive query\n",RD);
-				}else{
-
-					printf("RD: %d = UNKNOWN\n",RD);
-				}
-
-				
-				RA = (flags & 0x0080) >> 7;
-
-				if(RA == 0){
-
-					printf("RA: %d = Recursion not available\n",RA);
-				}else if(RD == 1){
-
-					printf("RA: %d = Recursion available\n",RA);
-				}else{
-
-					printf("RA: %d = UNKNOWN\n",RA);
-				}
-
-				SA = (flags & 0x0020) >> 5;
-
-				if(SA == 0){
-
-					printf("SA: %d = Answer/Authority portion was NOT authenticated by server\n",SA);
-				}else if(SA == 1){
-
-					printf("SA: %d = Answer/Authority portion was  authenticated by server\n",SA);
-				}else{
-
-					printf("SA: %d = UNKNOWN\n",SA);
-				}
-				
-				RCode = (flags & 0x000F);
-
-				if(RCode == 0){
-
-					printf("RCode: %d = No error\n",RCode);
-				}else if(RCode == 4){
-
-					printf("RCode: %d = Format error in query\n",RCode);
-				}else if(RCode == 2){
-				
-					printf("RCode: %d = Server failure\n",RCode);
-				}else if(RCode == 1){
-					printf("RCode: %d = Name does not exist\n", RCode);
-				
-				}else{
-
-					printf("RCode: %d = UNKNOWN\n",RCode);
-				}
-			}			
+		}else if( QR == 0){
+		
+			printf("QR: %d = Query\n",QR);
+		}else{
+			printf("QR: %d = UNKNOWN\n",QR);
 
 		}
 
-		
+		opCode = (flags & 0x7800) >> 11 ;
+
+		if(opCode == 0){
 	
+			printf("Opcode: %d = Standard Query\n",opCode);
+		}else if(opCode == 4){
+			printf("Opcode: %d = Inverse\n",opCode);
+		}else{
+			printf("Opcode: %d = UNKNOWN\n",opCode);
+		}
+
+		
+		AA = (flags & 0x0400) >> 10;
+
+		if(AA == 0){
+
+			printf("AA: %d = Non-authorative DNS answer\n",AA);
+		}else if(AA == 1){
+
+			printf("AA: %d = Authorative DNS answer\n",AA);
+		}else{
+
+			printf("AA: %d = UNKNOWN\n",AA);
+		}
+		
+		TC = (flags & 0x0200) >> 9;
+
+		if(TC == 0){
+
+			printf("TC: %d = Message not truncated\n",TC);
+		}else if(TC == 1){
+
+			printf("TC: %d = Message truncated\n",TC);
+		}else{
+
+			printf("TC: %d = UNKNOWN\n",TC);
+		}
+
+		RD = (flags & 0x0100) >> 8;
+
+		if(RD == 0){
+
+			printf("RD: %d = Non-recursive query\n",RD);
+		}else if(RD == 1){
+
+			printf("RD: %d = Recursive query\n",RD);
+		}else{
+
+			printf("RD: %d = UNKNOWN\n",RD);
+		}
+
+		if(QR == 1){
+			RA = (flags & 0x0080) >> 7;
+
+			if(RA == 0){
+
+				printf("RA: %d = Recursion not available\n",RA);
+			}else if(RD == 1){
+
+				printf("RA: %d = Recursion available\n",RA);
+			}else{
+
+				printf("RA: %d = UNKNOWN\n",RA);
+			}
+
+			SA = (flags & 0x0020) >> 5;
+
+			if(SA == 0){
+
+				printf("SA: %d = Answer/Authority portion was NOT authenticated by server\n",SA);
+			}else if(SA == 1){
+
+				printf("SA: %d = Answer/Authority portion was  authenticated by server\n",SA);
+			}else{
+
+				printf("SA: %d = UNKNOWN\n",SA);
+			}
+		
+			RCode = (flags & 0x000F);
+
+			if(RCode == 0){
+
+				printf("RCode: %d = No error\n",RCode);
+			}else if(RCode == 4){
+
+				printf("RCode: %d = Format error in query\n",RCode);
+			}else if(RCode == 2){
+		
+				printf("RCode: %d = Server failure\n",RCode);
+			}else if(RCode == 1){
+				printf("RCode: %d = Name does not exist\n", RCode);
+		
+			}else{
+
+				printf("RCode: %d = UNKNOWN\n",RCode);
+			}
+		}
+
+		//parsing numQ,numAns,numAuth,numAdd
+
+		numQ = (dns[4] << 8) | dns[5];
+		numAns = (dns[6] << 8) | dns[7];
+		numAuth = (dns[8] << 8) | dns[9];
+		numAdd = (dns[10] << 8) | dns[11];
+		
+		printf("Questions: %d\n",numQ);
+		printf("Answer RR's: %d\n",numAns);
+		printf("Authority RR's: %d\n",numAuth);
+		printf("Additional RR's: %d\n",numAdd);
+
+		
+		printf("...Queries...\n\nQueryName: ");
+		//start of Qname data
+		j = 13;
+
+		for(i = 0; i < numQ + numAns + numAuth + numAdd; i++){
+
+			
+			
+			while((dns[j] != 0) && (dns[j] != 0xc0)){
+				
+				if(!isalpha(dns[j])){
+					printf(".");
+					dName[j - 13] = '.';
+				}else{
+
+					printf("%c",dns[j]);
+					dName[j-13] = dns[j];
+				} 
+
+				j++;
+			}			
+			
+			printf("\n");
+
+			if(dns[j] == 0xc0){
+				printf("%s\n",dName);
+				j++;
+			}
+			
+			qType = (dns[j + 1] << 8) | dns[j + 2];
+			switch(qType){
+
+				case(1): printf("Type: A\n");
+					break;
+
+				case(2): printf("Type: NS\n");
+					break;
+
+				case(5): printf("Type: CNAME\n");
+					break;
+
+				case(6): printf("Type: SOA\n");
+					break;
+
+				case(12): printf("Type: PTR\n");
+					break;
+
+				case(15): printf("Type: MX\n");
+					break;
+
+				case(16): printf("Type: TXT\n");
+					break;
+
+				default: printf("Type: UNKNOWN\n");
+			}
+
+			qClass = (dns[j + 3] << 8) | dns[j + 4];
+
+			if(qClass == 0x0001){
+
+				printf("Class: IN\n");
+			}
+
+			//Here the querries stop 
+			if(i < numQ){
+
+				j = j + 5;
+				
+				if(numAns != 0){
+
+				printf("...Answers...\n");
+				}
+				continue;
+
+			}
+			
+			TTL =  (dns[j + 5] << 24) | (dns[j + 6] << 16) | (dns[j + 7] << 8) | dns[j + 8];
+			printf("TTL: %d\n",TTL);
+			
+			rdLength = (dns[j + 9] << 8) | dns[j + 10];
+
+			printf("Data length: %d\n",rdLength);
+						
+			j = j + rdLength + 11;
+
+			if((i < numQ + numAns + numAuth) && (numAuth != 0)){
+			
+				printf("...Autoritative nameservers...\n\n");
+			}
+
+			if((i < numQ + numAns + numAuth + numAdd) && (numAdd != 0)){
+			
+				printf("...Additional records...\n\n");
+			}
+
+
+		}
+						
 	}
 
 	
