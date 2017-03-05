@@ -1,9 +1,13 @@
+/*
+*Packet sniffer
+*Advanced network security project assigment 1
+*Nourdin Ait el Mehdi, 4276825
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <pcap.h>
 #include <ctype.h>
-
-#define NUM_OF_PACKETS 6
 
 
 //returns device name
@@ -385,13 +389,6 @@ void show_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 
 }
 
-
-
-
-
-
-//Remove all this to read live packets and save to file.
-// Number of packets to read is written in #define.
 int main()
 {
 	
@@ -500,7 +497,7 @@ int main()
 					return(2);
 				}
 	
-				status = pcap_loop(handle, NUM_OF_PACKETS, parse_packet, (char*) dumper);
+				status = pcap_loop(handle, 0, parse_packet, (char*) dumper);
 				switch(status){
 					case 0:
 						printf("cnt is exhausted or no more packets available\n");
@@ -520,176 +517,17 @@ int main()
 				break;
 			case 4 : 
 				break;
-			default: printf("wrong input, try again\n");
+			default: printf("Wrong input, try again\n");
 				
 
 		}
-/*
-		if(chose == 1){
-			printf("How many packets to sniff?\n");
-			scanf("%d",&chose);
 
-			//I'm working with pcap 0.8 so i have to use pcap_open_live.
-			handle = pcap_open_live(Find_Device(errbuf), BUFSIZ, 1, 1000, errbuf);
-	
-			if(handle == NULL){
-				fprintf(stderr, "Couldn't open device: %s\n", errbuf);
-				return(2);
-			}
-
-			status = pcap_loop(handle, chose, parse_packet, NULL);
-			switch(status){
-				case 0:
-					printf("cnt is exhausted or no more packets available\n");
-				break;
-		
-				case -1:
-					printf("ERROR in pcap_loop\n");
-				break;
-		
-				case -2:
-					printf("pcap_breakloop was called\n");
-				break;
-
-			}
-
-			printf("Goodbye\n");
-			chose = 4;
-			pcap_close(handle);
-		}
-*/
-/*
-		if(chose == 2){
-			printf("How many packets to sniff?\n");
-				scanf("%d",&chose);
-				//I'm working with pcap 0.8 so i have to use pcap_open_live.
-				handle = pcap_open_live(Find_Device(errbuf), BUFSIZ, 1, 1000, errbuf);
-	
-				if(handle == NULL){
-					fprintf(stderr, "Couldn't open device: %s\n", errbuf);
-					return(2);
-				}
-
-
-				//Open file to write to.
-				dumper = pcap_dump_open(handle,"packets.pcap");
-				if(dumper == NULL){
-					printf("Error pcap_dump_open");
-					return(2);
-				}
-
-				printf("Sniffing\n");
-
-				//Write to file until no more packets or NUM_OF_PACKETS exhausted 
-				status = pcap_loop(handle, chose, pcap_dump, (char*) dumper);
-				switch(status){
-					case 0:
-						printf("cnt is exhausted or no more packets available\n");
-					break;
-		
-					case -1:
-						printf("ERROR in pcap_loop\n");
-					break;
-		
-					case -2:
-						printf("pcap_breakloop was called\n");
-					break;
-
-				}
-
-				printf("Packets written to packets.pcap\n");
-				printf("Goodbye\n");
-				chose = 4;
-				pcap_dump_close(dumper);
-				pcap_close(handle);
-
-		}
-
-*/
 		if(chose == 4){
 			printf("Goodbye\n");
 			break;
 		}
 
 	}
-/*this
-	//I'm working with pcap 0.8 so i have to use pcap_open_live.
-	handle = pcap_open_live(Find_Device(errbuf), BUFSIZ, 1, 1000, errbuf);
-	
-	if(handle == NULL){
-		fprintf(stderr, "Couldn't open device: %s\n", errbuf);
-		return(2);
-	}
-
-
-	//Open file to write to.
-	dumper = pcap_dump_open(handle,"packets.pcap");
-	if(dumper == NULL){
-		printf("Error pcap_dump_open");
-		return(2);
-	}
-
-*/	
-/*
-	//Get one packet 
-	packet = pcap_next(handle, &header);
-	if(packet == NULL){
-		fprintf(stderr, "Couldn't get packet or there where no packets to sniff: %s\n", errbuf);
-		return(2);
-	}
-
-	printf("packet lenght:%d\n", header.len);
-*/
-
-
-	//Write to file until no more packets or NUM_OF_PACKETS exhausted 
-/*this	status = pcap_loop(handle, NUM_OF_PACKETS, pcap_dump, (char*) dumper);
-	switch(status){
-		case 0:
-			printf("cnt is exhausted or no more packets available\n");
-		break;
-		
-		case -1:
-			printf("ERROR in pcap_loop\n");
-		break;
-		
-		case -2:
-			printf("pcap_breakloop was called\n");
-		break;
-
-	}
-*/
-
-	// END session
-/*	pcap_dump_close(dumper);
-	pcap_close(handle);
-*/	
-
-//READING FROM FILE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-/*	printf("START READING FROM FILE\n");
-
-	//Read from file
-	handle = pcap_open_offline("dnssample.pcap", errbuf);
-	if(handle == NULL){
-		fprintf(stderr, "Error when trying to read from file: %s\n", errbuf);
-		return(2);
-	}
-	
-	status = pcap_loop(handle, NUM_OF_PACKETS, parse_packet, (char*) dumper);
-	switch(status){
-		case 0:
-			printf("cnt is exhausted or no more packets available\n");
-		break;
-		
-		case -1:
-			printf("ERROR in pcap_loop\n");
-		break;
-		
-		case -2:
-			printf("pcap_breakloop was called\n");
-		break;
-
-	}*/
 
     return 0;
 }
