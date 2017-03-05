@@ -148,7 +148,7 @@ void show_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 
 	}
 	
-	unsigned int tID,flags, QR;
+	unsigned int tID,flags, QR, opCode, AA, TC, RD, RA,SA,RCode;
 
 	if((sPort == 53) || (dPort == 53)){
 
@@ -163,18 +163,116 @@ void show_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 				flags = tID = (dns[2] << 8) | dns[3];
 				printf("Flags: 0x%.4x\n", flags);
 
-				QR = (flags & 0x80) >> 7 ;
+				QR = (flags & 0x8000) >> 15 ;
 
 				if(QR == 1){
 				
-					printf("QR: 0x%.4x = Reponse",QR);
+					printf("QR: %d = Reponse\n",QR);
 
-				}else{
+				}else if( QR == 0){
 				
-					printf("QR: 0x%.4x = Query",QR);
+					printf("QR: %d = Query\n",QR);
+				}else{
+					printf("QR: %d = UNKNOWN\n",QR);
+
+				}
+
+				opCode = (flags & 0x7800) >> 11 ;
+
+				if(opCode == 0){
+			
+					printf("Opcode: %d = Standard Query\n",opCode);
+				}else if(opCode == 4){
+					printf("Opcode: %d = Inverse\n",opCode);
+				}else{
+					printf("Opcode: %d = UNKNOWN\n",opCode);
 				}
 
 				
+				AA = (flags & 0x0400) >> 10;
+
+				if(AA == 0){
+
+					printf("AA: %d = Non-authorative DNS answer\n",AA);
+				}else if(AA == 1){
+
+					printf("AA: %d = Authorative DNS answer\n",AA);
+				}else{
+
+					printf("AA: %d = UNKNOWN\n",AA);
+				}
+				
+				TC = (flags & 0x0200) >> 9;
+
+				if(TC == 0){
+
+					printf("TC: %d = Message not truncated\n",TC);
+				}else if(TC == 1){
+
+					printf("TC: %d = Message truncated\n",TC);
+				}else{
+
+					printf("TC: %d = UNKNOWN\n",TC);
+				}
+
+				RD = (flags & 0x0100) >> 8;
+
+				if(RD == 0){
+
+					printf("RD: %d = Non-recursive query\n",RD);
+				}else if(RD == 1){
+
+					printf("RD: %d = Recursive query\n",RD);
+				}else{
+
+					printf("RD: %d = UNKNOWN\n",RD);
+				}
+
+				
+				RA = (flags & 0x0080) >> 7;
+
+				if(RA == 0){
+
+					printf("RA: %d = Recursion not available\n",RA);
+				}else if(RD == 1){
+
+					printf("RA: %d = Recursion available\n",RA);
+				}else{
+
+					printf("RA: %d = UNKNOWN\n",RA);
+				}
+
+				SA = (flags & 0x0020) >> 5;
+
+				if(SA == 0){
+
+					printf("SA: %d = Answer/Authority portion was NOT authenticated by server\n",SA);
+				}else if(SA == 1){
+
+					printf("SA: %d = Answer/Authority portion was  authenticated by server\n",SA);
+				}else{
+
+					printf("SA: %d = UNKNOWN\n",SA);
+				}
+				
+				RCode = (flags & 0x000F);
+
+				if(RCode == 0){
+
+					printf("RCode: %d = No error\n",RCode);
+				}else if(RCode == 4){
+
+					printf("RCode: %d = Format error in query\n",RCode);
+				}else if(RCode == 2){
+				
+					printf("RCode: %d = Server failure\n",RCode);
+				}else if(RCode == 1){
+					printf("RCode: %d = Name does not exist\n", RCode);
+				
+				}else{
+
+					printf("RCode: %d = UNKNOWN\n",RCode);
+				}
 			}			
 
 		}
