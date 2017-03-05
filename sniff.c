@@ -49,8 +49,9 @@ void show_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 
  void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet){
 
-	u_char macDes[6], macSour[6], eType[2],ipHLength, udp[8];
-	int i,sPort, dPort;
+	u_char macDes[6], macSour[6], eType[2],ipHLength, udp[8], *dns;
+	u_char tID;
+	int i,sPort, dPort,dnsLen, udpLen;
 
 	for(i = 0; i < (*header).caplen; i++){
 		
@@ -115,15 +116,38 @@ void show_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 
 			sPort = (udp[0] << 8) | udp[1];
 			dPort = (udp[2] << 8) | udp[3];
+			udpLen = (udp[4] << 8) | udp[5];
+			dnsLen = (udp[4] << 8) | udp[5] - 8;
 			printf("upd source port: %d\n",sPort);
 			printf("upd destination port: %d\n",dPort);
+			printf("upd data length: %d\n",udpLen);
+
+			// intialize dns array
+			dns = (u_char *) malloc(dnsLen);
 
 		}		
 
 		// udp stopt here 
+		// 53 is DNS ADD CHECK FOR DNS
+		if((i >= 42) && ((sPort == 53) || (dPort == 53))){
+			
+			dns[i - 42] = packet[i];
+		}
+
+		if((i >= 42) && (i < 44)){
+
+			tID = 
+		}
+
+		if( i == 45){
+
+			printf("dns first part: %.2x\n", dns[0]);
+		}
+
 	}
 	
 	
+	free(dns);
 
 
 }
