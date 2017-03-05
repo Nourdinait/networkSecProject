@@ -47,7 +47,7 @@ void show_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 
 }
 
-
+//Parse packet
  void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet){
 
 	u_char macDes[6], macSour[6], eType[2],ipHLength, udp[8], *dns,dName[255];
@@ -56,7 +56,8 @@ void show_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 
 	udpBeg = 3000;
 	udpEnd = 3000;
-		printf("headerLenght: %d\n", (*header).caplen);
+	
+	printf("Parsing packet\n");
 	for(i = 0; i < (*header).caplen; i++){
 		
 		if(i == 0){
@@ -74,7 +75,7 @@ void show_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 
 		if(i == 6){
 
-			printf("\n macSour: ");
+			printf("\nmacSour: ");
 			
 		}
 	
@@ -87,7 +88,7 @@ void show_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 
 		if(i == 12){
 
-			printf("\n ethernet type: ");
+			printf("\nethernet type: ");
 			
 		}
 
@@ -106,7 +107,7 @@ void show_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 			i = i + ipHLength;
 			udpBeg = i;
 			udpEnd = i + 8;
-			printf("\nIP header length: %d, %d\n",ipHLength, i);
+			printf("\nIP header length: %d\n",ipHLength);
 			
 			
 		}
@@ -125,9 +126,9 @@ void show_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 			dPort = (udp[2] << 8) | udp[3];
 			udpLen = (udp[4] << 8) | udp[5];
 			dnsLen = (udp[4] << 8) | udp[5] - 8;
-			printf("upd source port: %d\n",sPort);
-			printf("upd destination port: %d\n",dPort);
-			printf("upd data length: %d\n",udpLen);
+			printf("udp source port: %d\n",sPort);
+			printf("udp destination port: %d\n",dPort);
+			printf("udp data length: %d\n",udpLen);
 
 			// intialize dns array
 			dns = (u_char *) malloc(dnsLen);
@@ -139,13 +140,6 @@ void show_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 			
 			dns[i - udpEnd] = packet[i];
 		}
-
-		if( i == (*header).caplen - 1){
-
-			printf("dns first part: %.2x\n", dns[0]);
-		}
-
-		
 
 	}
 	
@@ -406,9 +400,36 @@ int main()
 	pcap_t *handle;
 	struct pcap_pkthdr header;
 	const u_char *packet;
-	int status;
+	int status,*chose;
 	pcap_dumper_t *dumper;
-/*this
+/*
+	while(1){
+		printf("Welcome choose one of the following options\n");
+		printf("1). Sniff live\n");
+		printf("2). Sniff from file\n");
+		printf("3). Exit\n");
+		scanf("%d",chose);
+		printf("chose: %d\n",*chose);
+		
+		switch(*chose){
+			case(1):
+				break;
+
+			case(2):
+				break;
+
+			case(3): printf("Goodbye\n");
+				break;
+			default: printf("wrong input, try again\n");
+				
+
+		}
+
+		if(*chose == 3){
+		break;
+		}
+	}
+*/
 	//I'm working with pcap 0.8 so i have to use pcap_open_live.
 	handle = pcap_open_live(Find_Device(errbuf), BUFSIZ, 1, 1000, errbuf);
 	
@@ -417,14 +438,14 @@ int main()
 		return(2);
 	}
 
-*/
+
 	//Open file to write to.
-/*this	dumper = pcap_dump_open(handle,"packets.pcap");
+	dumper = pcap_dump_open(handle,"packets.pcap");
 	if(dumper == NULL){
 		printf("Error pcap_dump_open");
 		return(2);
 	}
-*/
+
 	
 /*
 	//Get one packet 
@@ -437,7 +458,7 @@ int main()
 	printf("packet lenght:%d\n", header.len);
 */
 
-/*this
+
 	//Write to file until no more packets or NUM_OF_PACKETS exhausted 
 	status = pcap_loop(handle, NUM_OF_PACKETS, pcap_dump, (char*) dumper);
 	switch(status){
@@ -459,8 +480,10 @@ int main()
 	// END session
 	pcap_dump_close(dumper);
 	pcap_close(handle);
-*/	
-	printf("START READING FROM FILE\n");
+	
+
+//READING FROM FILE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+/*	printf("START READING FROM FILE\n");
 
 	//Read from file
 	handle = pcap_open_offline("dnssample.pcap", errbuf);
@@ -483,7 +506,7 @@ int main()
 			printf("pcap_breakloop was called\n");
 		break;
 
-	}
+	}*/
 
     return 0;
 }
