@@ -1,0 +1,13 @@
+###ARP requests have to be send to the broadcast adres.###
+
+ARP request with operation (byte 6) set to 1 and Target HW adres (byte 18->22)  to FF:FF:FF:FF:FF:FF. PERMITED
+
+ARP request with operation (byte 6) set to 1 and Target HW adres (byte 18->22)  NOT to FF:FF:FF:FF:FF:FF. ERROR
+
+###ARP reponses have to be send unicast to sender of the request.###
+
+ARP response with operation (byte 6) set to 0 and Target HW adres (byte 18->22)  NOT to FF:FF:FF:FF:FF:FF. PERMITTED
+
+ARP response with operation (byte 6) set to 0 and Target HW adres (byte 18->22)  to FF:FF:FF:FF:FF:FF. ERROR
+
+
